@@ -160,8 +160,13 @@ const NOVELPIA = { 1: 'fantasy', 12: 'modern', 3: 'modern', 2: 'wuxia', 6: 'roma
 export async function novelpia() {
   const out = [];
   for (const [g, cat] of Object.entries(NOVELPIA)) {
-    const html = await get(`https://novelpia.com/top100/all/weekly/view/all/all/?main_genre=${g}`);
-    const cards = html.split('novelbox mobile_hidden').slice(1);
+    // 가끔 목록이 빈 페이지가 내려와서, 비어 있으면 잠시 뒤 한 번 더 받는다
+    let cards = [];
+    for (let attempt = 0; attempt < 3 && !cards.length; attempt++) {
+      if (attempt) await sleep(4000 * attempt);
+      const html = await get(`https://novelpia.com/top100/all/weekly/view/all/all/?main_genre=${g}`);
+      cards = html.split('novelbox mobile_hidden').slice(1);
+    }
     cards.forEach((c, i) => {
       const id = c.match(/location='\/novel\/(\d+)'/)?.[1];
       const title = text(c.match(/class="cut_line_one">([\s\S]*?)<\/b>/)?.[1]);

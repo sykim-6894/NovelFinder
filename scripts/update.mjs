@@ -35,6 +35,13 @@ async function collect() {
     try {
       const list = await SOURCES[pf]();
       if (list.length < 20) throw new Error(`결과가 너무 적음 (${list.length}편)`);
+      // 이번에 통째로 빠진 장르는 지난번 수집분을 유지한다 (일시적인 빈 응답 대비)
+      const got = new Set(list.map((n) => n.cat));
+      const kept = (await readJson(file, [])).filter((n) => !got.has(n.cat));
+      if (kept.length) {
+        list.push(...kept);
+        console.warn(`  ${PLATFORMS[pf]}: 빠진 장르 ${[...new Set(kept.map((n) => n.cat))].join(', ')} — 이전 데이터 ${kept.length}편 유지`);
+      }
       await writeFile(file, JSON.stringify(list));
       status[pf] = { ok: true, n: list.length };
       all.push(...list);
