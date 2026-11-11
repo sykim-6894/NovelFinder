@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>사이트별 인기순위 — NovelFinder</title>
+  <meta name="description" content="네이버 시리즈·카카오페이지·문피아·노벨피아의 웹소설 일간·주간 인기순위를 한곳에서 봅니다.">
+  <meta property="og:title" content="사이트별 웹소설 인기순위 — NovelFinder">
+  <meta property="og:description" content="네이버 시리즈·카카오페이지·문피아·노벨피아의 일간·주간 인기순위.">
+  <meta name="referrer" content="no-referrer">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-row">
+      <a class="brand" href="../"><span class="brand-mark">N</span>NovelFinder</a>
+      <nav class="tabs">
+        <a href="../">추천 목록</a><a class="on" href="./">인기순위</a><a href="../weekly/">주간 추천</a>
+      </nav>
+      <span class="updated" id="updated"></span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section>
+      <div class="section-head">
+        <h2>사이트별 인기순위</h2>
+        <p id="count"></p>
+        <a class="link" id="src" href="#" target="_blank" rel="noopener" hidden>원본 순위 보기 →</a>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">사이트</span>
+        <div class="chips" id="pfs"></div>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">기간</span>
+        <div class="chips" id="periods"></div>
+      </div>
+      <div class="filter-row" id="subRow" hidden>
+        <span class="filter-label">구분</span>
+        <div class="chips" id="subs"></div>
+      </div>
+      <p class="rank-note muted" id="note" hidden></p>
+      <ol class="ranklist" id="list"></ol>
+      <p class="empty" id="empty" hidden>순위를 불러오지 못했습니다. 잠시 후 새로 고침해 주세요.</p>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>각 플랫폼이 공개한 인기 순위를 하루 한 번 모아 보여 줍니다. 성인 전용 작품은 빠져 있어 순위 번호가 건너뛸 수 있습니다.</p>
+    <p>작품을 누르면 연재처의 작품 페이지로 이동합니다. 표지의 권리는 각 작가·플랫폼에 있습니다.</p>
+  </footer>
+
+  <script src="rank.js" type="module"></script>
+</body>
+</html>

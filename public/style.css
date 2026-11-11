@@ -24,6 +24,7 @@
   }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   margin: 0; background: var(--bg); color: var(--text);
   font: 15px/1.55 "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
@@ -143,6 +144,9 @@ dialog .why { margin: 18px 0 0; padding: 12px 14px; background: var(--panel2); b
 @media (max-width: 600px) {
   .wrap { padding: 0 14px; }
   .updated { display: none; }
+  .top-row { gap: 8px; }
+  .brand { font-size: 16px; gap: 7px; white-space: nowrap; }
+  .tabs a { padding: 0 8px; font-size: 14px; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px 10px; }
   .filter-row:not(.tools) { align-items: flex-start; }
   .filter-label { width: 42px; padding-top: 6px; }
@@ -152,3 +156,20 @@ dialog .why { margin: 18px 0 0; padding: 12px 14px; background: var(--panel2); b
   .post-novel { grid-template-columns: 96px 1fr; gap: 14px; }
   dialog { padding: 18px; }
 }
+
+/* 사이트별 인기순위 */
+.rank-note { margin: 4px 0 0; font-size: 13.5px; }
+.ranklist { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+.rank-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 6px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); transition: border-color .15s; }
+.rank-item:hover { border-color: var(--muted); }
+.rank-no { flex: none; width: 36px; text-align: center; font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--muted); }
+.rank-no.top { color: var(--accent); }
+.move { flex: none; width: 34px; margin-left: -8px; text-align: center; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
+.move.up { color: #d8452f; }
+.move.down { color: #3d7fd9; }
+.move.new { color: var(--accent); font-size: 10.5px; }
+.rank-item .cover { flex: none; width: 46px; border-radius: 5px; padding: 0; }
+.rank-item .cover.noimg::after { content: ''; }
+.rank-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rank-body .name { -webkit-line-clamp: 1; }
+@media (max-width: 760px) { .ranklist { grid-template-columns: 1fr; } }

@@ -3,7 +3,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SOURCES, PLATFORMS, CATS, munpiaDetail, novelpiaDetail } from './sources.mjs';
+import { SOURCES, PLATFORMS, CATS, cleanTitle, munpiaDetail, novelpiaDetail } from './sources.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const RAW = join(ROOT, 'data', 'raw');
@@ -16,9 +16,6 @@ const readJson = async (f, fallback) => {
   try { return JSON.parse(await readFile(f, 'utf8')); } catch { return fallback; }
 };
 
-// 제목 정리: "[독점]", "(연재)", "[단행본]" 같은 꼬리표 제거
-const TAG = /\s*[\[(（〈<][^\])）〉>]*(독점|연재|완결|단행본|개정|외전|특별|선공개|합본|세트|e북|이북|전\s*\d+\s*권|\d+\s*세|리마스터|무삭제)[^\])）〉>]*[\])）〉>]/g;
-const cleanTitle = (t) => t.replace(TAG, '').replace(/\s+/g, ' ').trim() || t.trim();
 const norm = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
 const authorKey = (a) => norm(a.split(/[,/&]/)[0] ?? '');
 const sameAuthor = (a, b) => !a || !b || a === b || a.includes(b) || b.includes(a);

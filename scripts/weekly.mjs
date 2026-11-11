@@ -89,7 +89,7 @@ const page = ({ title, desc, body }) => `<!doctype html>
   <header class="top">
     <div class="wrap top-row">
       <a class="brand" href="../"><span class="brand-mark">N</span>NovelFinder</a>
-      <nav class="tabs"><a href="../">추천 목록</a><a class="on" href="./">주간 추천</a></nav>
+      <nav class="tabs"><a href="../">추천 목록</a><a href="../rank/">인기순위</a><a class="on" href="./">주간 추천</a></nav>
     </div>
   </header>
   <main class="wrap post">

@@ -1,5 +1,5 @@
 // 플랫폼별 인기 순위 수집기. 각 함수는 아래 모양의 배열을 돌려준다.
-// { pf, id, title, author, cat, rank, url, img?, desc?, rating?, votes?, views?, eps?, done? }
+// { pf, id, title, author, cat, rank, url, img?, desc?, rating?, votes?, views?, eps?, done?, move? }
 // cat: fantasy | modern | wuxia | romance | rofan | etc
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -34,7 +34,7 @@ export const text = (s) =>
       return ENT[e] ?? m;
     })
     .replace(/\r/g, '')
-    .replace(/[ \t ]+/g, ' ')
+    .replace(/[ \t ]+/g, ' ')
     .replace(/\n\s*\n+/g, '\n')
     .trim();
 const int = (s) => parseInt(String(s ?? '').replace(/[^\d]/g, ''), 10) || 0;
@@ -45,33 +45,47 @@ const short = (s) => {
   return Math.round(parseFloat(m[1]) * ({ K: 1e3, M: 1e6 }[m[2]?.toUpperCase()] ?? 1));
 };
 
+// 제목 정리: "[독점]", "(연재)", "[단행본]" 같은 꼬리표 제거
+const TAG = /\s*[\[(（〈<][^\])）〉>]*(독점|연재|완결|단행본|개정|외전|특별|선공개|합본|세트|e북|이북|전\s*\d+\s*권|\d+\s*세|리마스터|무삭제)[^\])）〉>]*[\])）〉>]/g;
+export const cleanTitle = (t) => t.replace(TAG, '').replace(/\s+/g, ' ').trim() || t.trim();
+
 /* ---------- 네이버 시리즈 ---------- */
 const NAVER = { 202: 'fantasy', 208: 'modern', 206: 'wuxia', 201: 'romance', 207: 'rofan', 203: 'etc', 205: 'etc' };
+// 순위 목록 한 쪽. type: DAILY | WEEKLY, code: 장르 코드 또는 ALL
+export async function naverPage(type, code, page) {
+  const html = await get(`https://series.naver.com/novel/top100List.series?rankingTypeCode=${type}&categoryCode=${code}&page=${page}`);
+  const items = (html.split('comic_top_lst')[1] ?? '').split(/<li>/).slice(1).filter((it) => /productNo=/.test(it));
+  const list = [];
+  for (const it of items) {
+    const id = it.match(/productNo=(\d+)/)?.[1];
+    const title = text(it.match(/<h3>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/)?.[1]);
+    if (!id || !title || /19over/.test(it)) continue; // 성인 전용 작품 제외
+    const state = it.match(/총\s*([\d,]+)\s*화\s*\/\s*(미완결|완결)/);
+    // 순위는 자릿수마다 <em> 하나씩 나뉘어 있다
+    const numb = it.split('top_numb')[1]?.split('</div>')[0] ?? '';
+    const move = numb.match(/comic_ico (up|down)[\s\S]*?comic_no">(\d+)/);
+    list.push({
+      pf: 'naver', id, title,
+      author: text(it.match(/class="author">([\s\S]*?)<\/span>/)?.[1]),
+      rank: int([...numb.matchAll(/<em class="no\d+">(\d+)</g)].map((m) => m[1]).join('')) || undefined,
+      move: move ? (move[1] === 'up' ? 1 : -1) * +move[2] : /comic_ico new/.test(numb) ? 'new' : undefined,
+      url: `https://series.naver.com/novel/detail.series?productNo=${id}`,
+      img: it.match(/<img src="([^"]+)"/)?.[1]?.replace(/type=m\d+/, 'type=m260'),
+      desc: text(it.match(/<p class="dsc">([\s\S]*?)<\/p>/)?.[1]).replace(/([.?!…”’])(?=[가-힣A-Za-z“‘"'\[])/g, '$1 '),
+      rating: parseFloat(it.match(/class="score_num">([\d.]+)/)?.[1]) || undefined,
+      eps: state ? int(state[1]) : undefined,
+      done: state ? state[2] === '완결' : undefined,
+    });
+  }
+  return { list, more: items.length >= 20 };
+}
 export async function naver() {
   const out = [];
   for (const [code, cat] of Object.entries(NAVER)) {
     for (let page = 1; page <= 3; page++) {
-      const html = await get(`https://series.naver.com/novel/top100List.series?rankingTypeCode=DAILY&categoryCode=${code}&page=${page}`);
-      const list = html.split('comic_top_lst')[1] ?? '';
-      const items = list.split(/<li>/).slice(1);
-      for (const it of items) {
-        const id = it.match(/productNo=(\d+)/)?.[1];
-        const title = text(it.match(/<h3>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/)?.[1]);
-        if (!id || !title || /19over/.test(it)) continue; // 성인 전용 작품 제외
-        const state = it.match(/총\s*([\d,]+)\s*화\s*\/\s*(미완결|완결)/);
-        out.push({
-          pf: 'naver', id, title, cat,
-          author: text(it.match(/class="author">([\s\S]*?)<\/span>/)?.[1]),
-          rank: int(it.match(/<em class="no\d+">(\d+)</)?.[1]) || out.length + 1,
-          url: `https://series.naver.com/novel/detail.series?productNo=${id}`,
-          img: it.match(/<img src="([^"]+)"/)?.[1]?.replace(/type=m\d+/, 'type=m260'),
-          desc: text(it.match(/<p class="dsc">([\s\S]*?)<\/p>/)?.[1]).replace(/([.?!…”’])(?=[가-힣A-Za-z“‘"'\[])/g, '$1 '),
-          rating: parseFloat(it.match(/class="score_num">([\d.]+)/)?.[1]) || undefined,
-          eps: state ? int(state[1]) : undefined,
-          done: state ? state[2] === '완결' : undefined,
-        });
-      }
-      if (items.length < 20) break;
+      const { list, more } = await naverPage('DAILY', code, page);
+      for (const n of list) out.push({ ...n, cat, move: undefined, rank: n.rank || out.length + 1 });
+      if (!more) break;
     }
   }
   return out;
@@ -79,28 +93,37 @@ export async function naver() {
 
 /* ---------- 카카오페이지 ---------- */
 const KAKAO = { 86: 'fantasy', 120: 'modern', 87: 'wuxia', 89: 'romance', 117: 'rofan' };
+// 순위 목록 한 쪽. type: daily | weekly, sub: 장르 번호 또는 0(전체)
+export async function kakaoPage(type, sub, page) {
+  const r = await get(
+    `https://bff-page.kakao.com/api/gateway/view/v1/landing/ranking?category_uid=11&screen_uid=94&subcategory_uid=${sub}&ranking_type=${type}&page=${page}`,
+    { json: true, headers: { Referer: 'https://page.kakao.com/', Origin: 'https://page.kakao.com' } },
+  );
+  const raw = r?.result?.list ?? [];
+  const list = [];
+  for (const s of raw) {
+    if (s.age_grade >= 19 || !s.title) continue;
+    list.push({
+      pf: 'kakao', id: String(s.series_id), title: s.title,
+      cat: KAKAO[s.sub_category_uid] ?? 'etc',
+      author: s.authors ?? '',
+      rank: int(s.service_property?.rank) || undefined,
+      move: s.service_property?.rank_variation || undefined,
+      url: `https://page.kakao.com/content/${s.series_id}`,
+      img: s.thumbnail ? `https://dn-img-page.kakao.com/download/resource?kid=${s.thumbnail}&filename=th3` : undefined,
+      desc: s.operator_property?.copy || undefined,
+      views: s.service_property?.view_count || undefined,
+    });
+  }
+  return { list, more: raw.length >= 50 && !r.result.is_end };
+}
 export async function kakao() {
   const out = [];
   for (const [sub, cat] of Object.entries(KAKAO)) {
     for (let page = 0; page < 2; page++) {
-      const r = await get(
-        `https://bff-page.kakao.com/api/gateway/view/v1/landing/ranking?category_uid=11&screen_uid=94&subcategory_uid=${sub}&ranking_type=weekly&page=${page}`,
-        { json: true, headers: { Referer: 'https://page.kakao.com/', Origin: 'https://page.kakao.com' } },
-      );
-      const list = r?.result?.list ?? [];
-      for (const s of list) {
-        if (s.age_grade >= 19 || !s.title) continue;
-        out.push({
-          pf: 'kakao', id: String(s.series_id), title: s.title, cat,
-          author: s.authors ?? '',
-          rank: int(s.service_property?.rank) || out.length + 1,
-          url: `https://page.kakao.com/content/${s.series_id}`,
-          img: s.thumbnail ? `https://dn-img-page.kakao.com/download/resource?kid=${s.thumbnail}&filename=th3` : undefined,
-          desc: s.operator_property?.copy || undefined,
-          views: s.service_property?.view_count || undefined,
-        });
-      }
-      if (list.length < 50 || r.result.is_end) break;
+      const { list, more } = await kakaoPage('weekly', sub, page);
+      for (const n of list) out.push({ ...n, cat, move: undefined, rank: n.rank || out.length + 1 });
+      if (!more) break;
     }
   }
   return out;
@@ -127,61 +150,95 @@ export async function novelpiaDetail(id) {
   const desc = text(html.match(/property="og:description" content="([^"]*)"/)?.[1]).replace(/^(플러스작품|자유연재|자유작품)\s*-\s*/, '');
   return { desc };
 }
+// 베스트 목록 한 쪽. path: today(무료 투데이) | plsa.eachtoday(유료 투데이) | plsa.weekly(유료 주간)
+export async function munpiaPage(path) {
+  const html = await get(`https://www.munpia.com/best/${path}`);
+  const blocks = html.split('<a href="https://www.munpia.com/novel/detail/').slice(1);
+  const out = [];
+  for (const b of blocks) {
+    const id = b.match(/^(\d+)"/)?.[1];
+    const body = b.split('</a>')[0];
+    const title = text(body.match(/class="(?:novel-)?title(?:-wrap)?">\s*(?:<span[^>]*>)?([\s\S]*?)<\/(?:span|div)>/)?.[1] ?? body.match(/class="novel-title">([\s\S]*?)<\/div>/)?.[1]);
+    const genre = text(body.match(/class="(?:novel-)?genre">([\s\S]*?)<\/div>/)?.[1]);
+    if (!id || !title || out.some((o) => o.id === id)) continue;
+    out.push({
+      pf: 'munpia', id, title, cat: munpiaCat(genre),
+      author: text(body.match(/class="(?:novel-)?author">([\s\S]*?)<\/div>/)?.[1]),
+      rank: out.length + 1,
+      url: `https://www.munpia.com/novel/detail/${id}`,
+      img: body.match(/<img src="([^"]+)"/)?.[1],
+      views: int(body.match(/class="view-count">([\d,]+)/)?.[1] ?? body.match(/조회<span>([\d,]+)/)?.[1]) || undefined,
+      free: path === 'today' || undefined,
+    });
+  }
+  return out;
+}
 export async function munpia() {
   const out = [];
   // 유료 주간 베스트 + 무료 투데이 베스트
   for (const path of ['plsa.weekly', 'today']) {
-    const html = await get(`https://www.munpia.com/best/${path}`);
-    const blocks = html.split('<a href="https://www.munpia.com/novel/detail/').slice(1);
-    let n = 0;
-    for (const b of blocks) {
-      const id = b.match(/^(\d+)"/)?.[1];
-      const body = b.split('</a>')[0];
-      const title = text(body.match(/class="(?:novel-)?title(?:-wrap)?">\s*(?:<span[^>]*>)?([\s\S]*?)<\/(?:span|div)>/)?.[1] ?? body.match(/class="novel-title">([\s\S]*?)<\/div>/)?.[1]);
-      const genre = text(body.match(/class="(?:novel-)?genre">([\s\S]*?)<\/div>/)?.[1]);
-      if (!id || !title || out.some((o) => o.id === id)) continue;
-      n++;
-      out.push({
-        pf: 'munpia', id, title, cat: munpiaCat(genre),
-        author: text(body.match(/class="(?:novel-)?author">([\s\S]*?)<\/div>/)?.[1]),
-        rank: n,
-        url: `https://www.munpia.com/novel/detail/${id}`,
-        img: body.match(/<img src="([^"]+)"/)?.[1],
-        views: int(body.match(/class="view-count">([\d,]+)/)?.[1] ?? body.match(/조회<span>([\d,]+)/)?.[1]) || undefined,
-        free: path === 'today' || undefined,
-      });
-    }
+    for (const n of await munpiaPage(path)) if (!out.some((o) => o.id === n.id)) out.push(n);
   }
   return out;
 }
 
 /* ---------- 노벨피아 ---------- */
 const NOVELPIA = { 1: 'fantasy', 12: 'modern', 3: 'modern', 2: 'wuxia', 6: 'romance', 7: 'etc', 9: 'etc', 8: 'etc', 13: 'etc' };
+const novelpiaImg = (img) => (img && !/noimg|19\.|adult/.test(img) ? (img.startsWith('//') ? 'https:' + img : img) : undefined);
+// 실시간 순위 한 쪽. genre: 장르 번호, 비우면 전체
+export async function novelpiaPage(genre = '') {
+  // 가끔 목록이 빈 페이지가 내려와서, 비어 있으면 잠시 뒤 다시 받는다
+  let cards = [];
+  for (let attempt = 0; attempt < 3 && !cards.length; attempt++) {
+    if (attempt) await sleep(4000 * attempt);
+    const html = await get(`https://novelpia.com/top100/all/weekly/view/all/all/?main_genre=${genre}`);
+    cards = html.split('novelbox mobile_hidden').slice(1);
+  }
+  const out = [];
+  cards.forEach((c, i) => {
+    const id = c.match(/location='\/novel\/(\d+)'/)?.[1];
+    const title = text(c.match(/class="cut_line_one">([\s\S]*?)<\/b>/)?.[1]);
+    if (!id || !title) return;
+    out.push({
+      pf: 'novelpia', id, title,
+      author: text(c.match(/<\/b>\s*<font[^>]*>([\s\S]*?)<\/font>/)?.[1]),
+      rank: int(c.match(/class="thumb_s1">\s*(\d+)/)?.[1]) || i + 1,
+      url: `https://novelpia.com/novel/${id}`,
+      img: novelpiaImg(c.match(/<img src\s*="([^"]+)"/)?.[1]),
+      views: short(c.match(/ion-star"><\/i>\s*([\d.]+[KM]?)/)?.[1]) || undefined, // 선호(★) 수
+      eps: int(c.match(/EP\.(\d+)/)?.[1]) || undefined,
+    });
+  });
+  return out;
+}
+// 주간 TOP100 (노벨피아가 매주 한 번 집계)
+export async function novelpiaWeekly() {
+  const res = await fetch('https://novelpia.com/proc/novel_list_data', {
+    method: 'POST',
+    headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded', Referer: 'https://novelpia.com/novel_ranking' },
+    body: 'cmd=weekly_ranking',
+    signal: AbortSignal.timeout(25000),
+  });
+  if (!res.ok) throw new Error(`노벨피아 주간 순위 HTTP ${res.status}`);
+  const r = await res.json();
+  const list = Array.isArray(r.list) ? r.list : Object.values(r.list ?? {});
+  return list
+    .filter((n) => +n.novel_age < 19)
+    .map((n) => ({
+      pf: 'novelpia', id: String(n.novel_no), title: n.novel_name,
+      author: n.writer_nick ?? '',
+      rank: +n.rank_no,
+      url: `https://novelpia.com/novel/${n.novel_no}`,
+      img: novelpiaImg(n.novel_thumb || undefined),
+      desc: text(n.novel_story) || undefined,
+      eps: +n.count_book || undefined,
+      done: !!+n.is_complete || undefined,
+    }));
+}
 export async function novelpia() {
   const out = [];
   for (const [g, cat] of Object.entries(NOVELPIA)) {
-    // 가끔 목록이 빈 페이지가 내려와서, 비어 있으면 잠시 뒤 한 번 더 받는다
-    let cards = [];
-    for (let attempt = 0; attempt < 3 && !cards.length; attempt++) {
-      if (attempt) await sleep(4000 * attempt);
-      const html = await get(`https://novelpia.com/top100/all/weekly/view/all/all/?main_genre=${g}`);
-      cards = html.split('novelbox mobile_hidden').slice(1);
-    }
-    cards.forEach((c, i) => {
-      const id = c.match(/location='\/novel\/(\d+)'/)?.[1];
-      const title = text(c.match(/class="cut_line_one">([\s\S]*?)<\/b>/)?.[1]);
-      if (!id || !title) return;
-      const img = c.match(/<img src\s*="([^"]+)"/)?.[1];
-      out.push({
-        pf: 'novelpia', id, title, cat,
-        author: text(c.match(/<\/b>\s*<font[^>]*>([\s\S]*?)<\/font>/)?.[1]),
-        rank: int(c.match(/class="thumb_s1">\s*(\d+)/)?.[1]) || i + 1,
-        url: `https://novelpia.com/novel/${id}`,
-        img: img && !/noimg|19\.|adult/.test(img) ? (img.startsWith('//') ? 'https:' + img : img) : undefined,
-        views: short(c.match(/ion-star"><\/i>\s*([\d.]+[KM]?)/)?.[1]) || undefined, // 선호(★) 수
-        eps: int(c.match(/EP\.(\d+)/)?.[1]) || undefined,
-      });
-    });
+    for (const n of await novelpiaPage(g)) out.push({ ...n, cat });
   }
   return out;
 }
