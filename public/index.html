@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NovelFinder — 웹소설 추천</title>
+  <meta name="description" content="판타지·현대판타지·무협·로맨스 웹소설을 장르와 연재 플랫폼별로 골라 보는 추천 사이트. 매주 3편을 골라 소개합니다.">
+  <meta property="og:title" content="NovelFinder — 웹소설 추천">
+  <meta property="og:description" content="장르와 연재 플랫폼별로 골라 보는 웹소설 추천. 매주 3편을 골라 소개합니다.">
+  <meta name="referrer" content="no-referrer">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-row">
+      <a class="brand" href="./"><span class="brand-mark">N</span>NovelFinder</a>
+      <nav class="tabs">
+        <a class="on" href="./">추천 목록</a><a href="weekly/">주간 추천</a>
+      </nav>
+      <span class="updated" id="updated"></span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="weekly" hidden>
+      <div class="section-head">
+        <h2>이번 주 추천 3편</h2>
+        <p id="weeklyLabel"></p>
+        <a class="link" id="weeklyLink" href="weekly/">추천 글 읽기 →</a>
+      </div>
+      <div class="picks" id="picks"></div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>웹소설 찾기</h2>
+        <p id="count"></p>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">장르</span>
+        <div class="chips" id="cats"></div>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">플랫폼</span>
+        <div class="chips" id="pfs"></div>
+      </div>
+      <div class="filter-row tools">
+        <input id="q" type="search" placeholder="제목·작가 검색" autocomplete="off">
+        <select id="sort" aria-label="정렬">
+          <option value="s">추천순</option>
+          <option value="r">평점순</option>
+          <option value="e">연재 화수순</option>
+        </select>
+        <label class="check"><input id="done" type="checkbox"> 완결작만</label>
+      </div>
+      <div class="grid" id="grid"></div>
+      <p class="empty" id="empty" hidden>조건에 맞는 작품이 없습니다. 필터를 줄여 보세요.</p>
+      <button class="btn ghost more" id="more" type="button" hidden>더 보기</button>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>각 플랫폼의 공개 인기 순위를 모아 정리한 비공식 추천 사이트입니다. 순위·평점·화수는 수집 시점 기준이며, 표지와 소개글의 권리는 각 작가·플랫폼에 있습니다.</p>
+    <p>작품을 누르면 소개와 함께 연재처로 가는 링크를 볼 수 있습니다.</p>
+  </footer>
+
+  <dialog id="detail"></dialog>
+  <script src="app.js" type="module"></script>
+</body>
+</html>

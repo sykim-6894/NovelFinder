@@ -1,0 +1,60 @@
+name: Update data & deploy
+
+on:
+  schedule:
+    - cron: '0 21 * * *' # 매일 06:00 KST — 순위 갱신, 주간 추천은 월요일에만 새로 생성
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # 코드 push 때는 기존 데이터로 배포만, 스케줄/수동 실행 때만 새로 수집
+      - name: Fetch rankings
+        if: github.event_name != 'push'
+        run: node scripts/update.mjs
+
+      # 그 주(월요일 기준)의 추천이 아직 없을 때만 새로 만든다
+      - name: Weekly picks
+        if: github.event_name != 'push'
+        run: node scripts/weekly.mjs
+
+      - name: Commit data
+        if: github.event_name != 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data public/weekly data
+          git diff --cached --quiet || git commit -m "data: $(TZ=Asia/Seoul date +%F) 갱신"
+          git push
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
