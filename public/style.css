@@ -176,6 +176,14 @@ dialog .why { margin: 20px 0 0; color: var(--text2); font-size: 14px; }
 .rank-item .cover.noimg::after { content: ''; }
 .rank-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .rank-body .name { -webkit-line-clamp: 1; }
+button.rank-item { width: 100%; background: none; border: 0; border-bottom: 1px solid var(--line); text-align: left; cursor: pointer; }
+.facts .move { margin-left: 4px; width: auto; }
+
+/* 상세 창 순위 추이 */
+.trend { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
+.trend-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 8px; font-size: 14px; font-weight: 500; }
+.trend-head span { color: var(--muted); font-size: 13px; font-weight: 400; }
+.trend svg { display: block; width: 100%; height: auto; overflow: visible; font-size: 11px; font-variant-numeric: tabular-nums; fill: var(--muted); }
 
 @media (max-width: 1100px) { .pick { grid-template-columns: 104px 1fr; gap: 16px; padding: 16px; } }
 @media (max-width: 960px) { .picks { grid-template-columns: 1fr; } .pick { grid-template-columns: 112px 1fr; } }

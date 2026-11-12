@@ -34,6 +34,14 @@
       <div class="picks" id="picks"></div>
     </section>
 
+    <section id="rising" hidden>
+      <div class="section-head">
+        <h2>요즘 뜨는 작품</h2>
+        <p id="risingLabel"></p>
+      </div>
+      <ol class="ranklist" id="risingList"></ol>
+    </section>
+
     <section>
       <div class="section-head">
         <h2>전체 작품</h2>
@@ -51,6 +59,7 @@
         <input id="q" type="search" placeholder="제목·작가 검색" autocomplete="off">
         <select id="sort" aria-label="정렬">
           <option value="s">추천순</option>
+          <option value="m">급상승순</option>
           <option value="r">평점순</option>
           <option value="e">연재 화수순</option>
         </select>

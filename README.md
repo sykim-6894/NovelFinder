@@ -8,6 +8,7 @@
 | --- | --- |
 | `scripts/sources.mjs` | 플랫폼별 순위 수집기 (Node 22+, 의존성 없음) |
 | `scripts/update.mjs` | 수집 → 같은 작품 합치기 → 점수 계산 → `public/data/novels.json` |
+| `scripts/history.mjs` | 날짜별 장르 순위 기록(`data/history/`), 최근 7일 급상승·새로 진입 계산, 상세 창 그래프용 `public/data/history.json` |
 | `scripts/ranks.mjs` | 사이트별 일간·주간 인기순위 → `public/data/ranks.json` (인기순위 탭) |
 | `scripts/weekly.mjs` | 주간 추천 3편 선정, 글(`public/weekly/`) 생성 |
 | `public/` | 배포되는 사이트 (`index.html`, `app.js`, `style.css`) |

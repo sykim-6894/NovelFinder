@@ -158,13 +158,14 @@ export async function munpiaPage(path) {
   for (const b of blocks) {
     const id = b.match(/^(\d+)"/)?.[1];
     const body = b.split('</a>')[0];
-    const title = text(body.match(/class="(?:novel-)?title(?:-wrap)?">\s*(?:<span[^>]*>)?([\s\S]*?)<\/(?:span|div)>/)?.[1] ?? body.match(/class="novel-title">([\s\S]*?)<\/div>/)?.[1]);
+    // 공모전 작품은 제목 앞에 <span class="contest">공모전</span> 이 붙어 있어 title-wrap 을 먼저 본다
+    const title = text(body.match(/class="title-wrap">([\s\S]*?)<\/span>/)?.[1] ??body.match(/class="(?:novel-)?title(?:-wrap)?">\s*(?:<span[^>]*>)?([\s\S]*?)<\/(?:span|div)>/)?.[1] ?? body.match(/class="novel-title">([\s\S]*?)<\/div>/)?.[1]);
     const genre = text(body.match(/class="(?:novel-)?genre">([\s\S]*?)<\/div>/)?.[1]);
     if (!id || !title || out.some((o) => o.id === id)) continue;
     out.push({
       pf: 'munpia', id, title, cat: munpiaCat(genre),
       author: text(body.match(/class="(?:novel-)?author">([\s\S]*?)<\/div>/)?.[1]),
-      rank: out.length + 1,
+      rank: int(body.match(/class="num">\s*(\d+)/)?.[1]) || out.length + 1,
       url: `https://www.munpia.com/novel/detail/${id}`,
       img: body.match(/<img src="([^"]+)"/)?.[1],
       views: int(body.match(/class="view-count">([\d,]+)/)?.[1] ?? body.match(/조회<span>([\d,]+)/)?.[1]) || undefined,

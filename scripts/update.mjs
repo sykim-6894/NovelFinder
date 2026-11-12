@@ -3,6 +3,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { kstDate, snapshot, saveDay, loadDays, addTrend, writePublic } from './history.mjs';
 import { SOURCES, PLATFORMS, CATS, cleanTitle, munpiaDetail, novelpiaDetail } from './sources.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -36,7 +37,7 @@ async function collect() {
       const got = new Set(list.map((n) => n.cat));
       const kept = (await readJson(file, [])).filter((n) => !got.has(n.cat));
       if (kept.length) {
-        list.push(...kept);
+        list.push(...kept.map((n) => ({ ...n, stale: 1 }))); // 순위 기록에는 남기지 않는다
         console.warn(`  ${PLATFORMS[pf]}: 빠진 장르 ${[...new Set(kept.map((n) => n.cat))].join(', ')} — 이전 데이터 ${kept.length}편 유지`);
       }
       await writeFile(file, JSON.stringify(list));
@@ -84,7 +85,7 @@ function build(groups, meta) {
     let score = best * 0.86 + Math.min(es.length - 1, 2) * 5;
     if (rating) score += Math.max(-4, Math.min(4, (rating - 9.2) * 8));
     const p = {};
-    for (const e of es) p[e.pf] = { u: e.url, r: e.rank, ...(e.free ? { f: 1 } : {}) };
+    for (const e of es) p[e.pf] = { u: e.url, r: e.rank, i: e.id, ...(e.free ? { f: 1 } : {}) };
     const first = es.slice().sort((a, b) => a.rank - b.rank)[0];
     novels.push({
       id: `${first.pf[0]}${first.id}`,
@@ -139,8 +140,16 @@ async function main() {
   await writeFile(META, JSON.stringify(meta));
 
   const novels = build(groups, meta);
+
+  // 오늘 새로 받은 순위만 기록한다 (실패해서 지난 데이터를 쓴 플랫폼과 유지한 장르는 빼고)
+  const today = kstDate();
+  await saveDay(today, snapshot(all.filter((e) => status[e.pf]?.ok && !e.stale)));
+  const days = await loadDays();
+  const trend = addTrend(novels, days, today);
   await mkdir(dirname(OUT), { recursive: true });
-  await writeFile(OUT, JSON.stringify({ updated: Date.now(), platforms: PLATFORMS, cats: CATS, status, novels }));
+  await writePublic(novels, days);
+  await writeFile(OUT, JSON.stringify({ updated: Date.now(), platforms: PLATFORMS, cats: CATS, status, trend, novels }));
+  if (trend) console.log(`순위 변동: ${trend.from} → ${trend.to}, 상승 ${novels.filter((n) => n.m).length}편, 새로 진입 ${novels.filter((n) => n.nw).length}편`);
   const multi = novels.filter((n) => Object.keys(n.p).length > 1).length;
   console.log(`총 ${novels.length}편 (여러 플랫폼 연재 ${multi}편) → public/data/novels.json`);
 }
