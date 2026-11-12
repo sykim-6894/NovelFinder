@@ -8,13 +8,15 @@
   <meta property="og:title" content="NovelFinder — 웹소설 추천">
   <meta property="og:description" content="장르와 연재 플랫폼별로 골라 보는 웹소설 추천. 매주 3편을 골라 소개합니다.">
   <meta name="referrer" content="no-referrer">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f1b16'/><text x='16' y='23' font-family='Georgia,serif' font-size='20' text-anchor='middle' fill='%23f7f4ee'>N</text></svg>">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="top">
     <div class="wrap top-row">
-      <a class="brand" href="./"><span class="brand-mark">N</span>NovelFinder</a>
+      <a class="brand" href="./">NovelFinder</a>
       <nav class="tabs">
         <a class="on" href="./">추천 목록</a><a href="rank/">인기순위</a><a href="weekly/">주간 추천</a>
       </nav>
@@ -25,7 +27,7 @@
   <main class="wrap">
     <section id="weekly" hidden>
       <div class="section-head">
-        <h2>이번 주 추천 3편</h2>
+        <h2>이번 주 추천</h2>
         <p id="weeklyLabel"></p>
         <a class="link" id="weeklyLink" href="weekly/">추천 글 읽기 →</a>
       </div>
@@ -34,7 +36,7 @@
 
     <section>
       <div class="section-head">
-        <h2>웹소설 찾기</h2>
+        <h2>전체 작품</h2>
         <p id="count"></p>
       </div>
       <div class="filter-row">

@@ -16,7 +16,7 @@ window.addEventListener('error', (e) => {
 }, true);
 
 const cover = (n) => `<div class="cover${n.img ? '' : ' noimg'}" data-t="${esc(n.t)}">${n.img ? `<img src="${esc(n.img)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}</div>`;
-const pfBadges = (n) => Object.keys(n.p).map((k) => `<span class="pf pf-${k}">${esc(data.platforms[k] ?? k)}</span>`).join('');
+const pfNames = (n) => Object.keys(n.p).map((k) => esc(data.platforms[k] ?? k)).join(' · ');
 const facts = (n) => [n.r ? `★ ${n.r.toFixed(1)}` : '', n.e ? `${n.e.toLocaleString('ko-KR')}화` : '', n.f ? '완결' : ''].filter(Boolean).join(' · ');
 
 function card(n) {
@@ -27,7 +27,7 @@ function card(n) {
     <strong class="name">${esc(n.t)}</strong>
     <span class="author">${esc(n.a)}</span>
     <span class="facts">${esc(facts(n))}</span>
-    <span class="pfs">${pfBadges(n)}</span>
+    <span class="pfs">${pfNames(n)}</span>
   </span>
 </button>`;
 }
@@ -71,7 +71,7 @@ function chips() {
 
 function links(n) {
   return Object.entries(n.p)
-    .map(([k, v]) => `<a class="btn pfbtn" href="${esc(v.u)}" target="_blank" rel="noopener">${esc(data.platforms[k] ?? k)}에서 보기<small>${v.f ? '무료 ' : ''}인기 ${v.r}위</small></a>`)
+    .map(([k, v], i) => `<a class="btn pfbtn${i ? ' ghost' : ''}" href="${esc(v.u)}" target="_blank" rel="noopener">${esc(data.platforms[k] ?? k)}에서 보기<small>${v.f ? '무료 ' : ''}${v.r}위</small></a>`)
     .join('');
 }
 
@@ -85,13 +85,14 @@ function open(n) {
     <h2>${esc(n.t)}</h2>
     <p class="author">${esc(n.a)}</p>
     <p class="facts">${esc([facts(n), n.v ? `조회 ${num(n.v)}` : ''].filter(Boolean).join(' · '))}</p>
-    <div class="pfs">${pfBadges(n)}</div>
+    <p class="pfs">${pfNames(n)}</p>
   </div>
 </div>
 ${n.why ? `<p class="why">${esc(n.why)}</p>` : ''}
 <p class="desc">${n.d ? esc(n.d) : '<span class="muted">소개글은 연재처에서 확인해 주세요.</span>'}</p>
 <div class="linklist">${links(n)}</div>`;
   d.showModal();
+  d.querySelector('.close').blur(); // 열자마자 닫기 버튼에 테두리가 생기지 않게
 }
 
 async function weekly() {
@@ -105,11 +106,10 @@ async function weekly() {
     .map((n, i) => `<button class="pick" type="button" data-pick="${i}">
   ${cover(n)}
   <span class="body">
-    <span class="genre">${esc(data.cats[n.c] ?? '')}</span>
+    <span class="pick-no">${i + 1}</span>
     <strong class="name">${esc(n.t)}</strong>
-    <span class="author">${esc(n.a)}</span>
-    <span class="why">${esc(n.why)}</span>
-    <span class="pfs">${pfBadges(n)}</span>
+    <span class="author">${esc([n.a, data.cats[n.c]].filter(Boolean).join(' · '))}</span>
+    <span class="synopsis">${esc(n.d ?? '')}</span>
   </span>
 </button>`)
     .join('');
